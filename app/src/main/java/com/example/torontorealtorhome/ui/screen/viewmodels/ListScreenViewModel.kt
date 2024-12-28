@@ -51,11 +51,17 @@ class ListScreenViewModel @Inject constructor(
 
     private fun fetchHouses() {
         viewModelScope.launch {
-            houseRepository.fetchHouses()
+           // houseRepository.fetchHouses()
+            houseRepository.startListeningForHouses()
         }
     }
 
     fun setSelectedHouse(house: House?) {
         _selectedHouse.value = house
+    }
+    override fun onCleared() {
+        super.onCleared()
+        // Stop listening when ViewModel is cleared
+        houseRepository.stopListeningForHouses()
     }
 }

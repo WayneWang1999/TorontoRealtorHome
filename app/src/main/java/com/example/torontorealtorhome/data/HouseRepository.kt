@@ -1,42 +1,48 @@
 package com.example.torontorealtorhome.data
 
+import android.util.Log
 import com.example.torontorenthome.models.House
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 class HouseRepository @Inject constructor(
-    private val firestore: FirebaseFirestore ,
+    private val firestore: FirebaseFirestore
 ) {
 
-    // MutableStateFlow for managing house list and loading state
     private val _houseList = MutableStateFlow<List<House>>(emptyList())
     val houseList: StateFlow<List<House>> = _houseList
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
-    suspend fun fetchHouses() {
-        _isLoading.value = true
-        try {
-            // Preload local data
-                  // Fetch from Firestore
-            val houses = firestore.collection("houses")
-                .get()
-                .await()
-                .documents
-                .mapNotNull { it.toObject(House::class.java) }
+    private var housesListener: ListenerRegistration? = null
 
-            // Update StateFlow and Room
-            _houseList.value = houses
-          //  houseDao.clearAll()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        } finally {
-            _isLoading.value = false
-        }
+    // Fetch houses with real-time updates
+    fun startListeningForHouses() {
+        _isLoading.value = true
+        housesListener = firestore.collection("houses")
+            .addSnapshotListener { snapshot, exception ->
+                if (exception != null) {
+                    Log.e("HouseRepository", "Listen failed: ${exception.message}", exception)
+                    _isLoading.value = false
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null) {
+                    val houseList = snapshot.documents.mapNotNull { it.toObject(House::class.java) }
+                    _houseList.value = houseList
+                }
+
+                _isLoading.value = false
+            }
     }
 
+    // Stop listening to Firestore updates
+    fun stopListeningForHouses() {
+        housesListener?.remove()
+        housesListener = null
+    }
 }
