@@ -120,6 +120,8 @@ fun NavHostContainer(
 
         composable(Routes.Map.route) {
             MapScreen(
+                navController,
+                userStateViewModel,
             )
         }
         composable(Routes.List.route) {

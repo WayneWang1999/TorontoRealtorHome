@@ -47,9 +47,6 @@ fun ListScreen(
                         launchSingleTop = true
                     }
                 },
-//                onFavoriteToggle = { houseId ->
-//                    userStateViewModel.toggleFavorite(houseId)
-//                }
             )
         }
     } else {

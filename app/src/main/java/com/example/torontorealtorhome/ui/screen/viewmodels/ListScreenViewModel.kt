@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -23,6 +24,9 @@ class ListScreenViewModel @Inject constructor(
 
     private val _errorMessage = MutableStateFlow("")
     val errorMessage: StateFlow<String> = _errorMessage
+
+    private val _selectedHouse = MutableStateFlow<House?>(null)
+    val selectedHouse: StateFlow<House?> get() = _selectedHouse.asStateFlow()
 
     // Accept `realtorHouseIds` from UserStateViewModel dynamically
     fun getListHouses(userStateViewModel: UserStateViewModel): StateFlow<List<House>> {
@@ -49,5 +53,9 @@ class ListScreenViewModel @Inject constructor(
         viewModelScope.launch {
             houseRepository.fetchHouses()
         }
+    }
+
+    fun setSelectedHouse(house: House?) {
+        _selectedHouse.value = house
     }
 }
