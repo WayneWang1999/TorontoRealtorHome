@@ -3,6 +3,7 @@ package com.example.torontorealtorhome
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.padding
@@ -34,6 +35,8 @@ import com.example.torontorealtorhome.ui.screen.SignUpScreen
 import com.example.torontorealtorhome.ui.screen.models.BottomNavItem
 import com.example.torontorealtorhome.ui.screen.models.Routes
 import com.example.torontorealtorhome.ui.screen.viewmodels.UserStateViewModel
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -132,6 +135,40 @@ fun NavHostContainer(
         }
         composable(Routes.Add.route) {
             AddScreen(
+                onSubmit = { house ->
+                    // Log the house object
+                    Log.d("AddScreen", "House submitted: $house")
+                    // Insert house into Firestore
+                    val firestore = FirebaseFirestore.getInstance()
+                    val currentUser = userStateViewModel.currentUser
+                    val currentUserId=currentUser.value!!.uid
+                    firestore.collection("houses")
+                        .add(house)
+                        .addOnSuccessListener { documentReference ->
+                            val houseId = documentReference.id
+                            Log.d("AddScreen", "House added successfully with ID: $houseId")
+
+                            // Update the current user's realtor house IDs
+                            if (currentUser != null) {
+                                firestore.collection("realtors")
+                                    .document(currentUserId) // Assuming currentUser.id gives the user ID
+                                    .update("realtorHouseIds", FieldValue.arrayUnion(houseId))
+                                    .addOnSuccessListener {
+                                        userStateViewModel.fetchRealtorHouseIds(currentUserId)
+                                        Log.d("AddScreen", "House ID added to realtor's house list successfully.")
+                                    }
+                                    .addOnFailureListener { exception ->
+                                        Log.e("AddScreen", "Failed to add house ID to realtor's house list: ${exception.message}", exception)
+                                    }
+                            }
+                            // Navigate back after successful insertion
+                            navController.popBackStack()
+                        }
+                        .addOnFailureListener { exception ->
+                            Log.e("AddScreen", "Failed to add house: ${exception.message}", exception)
+                        }
+                }
+
             )
         }
 

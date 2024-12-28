@@ -48,7 +48,7 @@ class UserStateViewModel @Inject constructor(): ViewModel() {
             fetchRealtorHouseIds(user.uid)
         }
     }
-    private fun fetchRealtorHouseIds(userId: String) {
+    fun fetchRealtorHouseIds(userId: String) {
         viewModelScope.launch {
             try {
                 val document = FirebaseFirestore.getInstance()
